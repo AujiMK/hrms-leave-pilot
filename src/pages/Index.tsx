@@ -1,41 +1,66 @@
 import { useState } from 'react';
-import { Header } from '@/components/layout/Header';
-import { EmployeeDashboard } from '@/components/employee/EmployeeDashboard';
-import { ManagerDashboard } from '@/components/manager/ManagerDashboard';
-import { HRDashboard } from '@/components/hr/HRDashboard';
-import { UserRole } from '@/types/leave';
-import { currentUser } from '@/data/mockData';
+import { QRScanner } from "@/components/qr/QRScanner";
+import { ChildProfile } from "@/components/qr/ChildProfile";
+import { AdminLogin } from "@/components/admin/AdminLogin";
+import { AdminDashboard } from "@/components/admin/AdminDashboard";
+import { Child } from "@/types/child";
 
 const Index = () => {
-  const [userRole, setUserRole] = useState<UserRole>('Employee');
-  
-  const mockUser = {
-    ...currentUser,
-    role: userRole
+  const [currentView, setCurrentView] = useState<'scanner' | 'profile' | 'admin-login' | 'admin-dashboard'>('scanner');
+  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+
+  const handleChildFound = (child: Child) => {
+    setSelectedChild(child);
+    setCurrentView('profile');
   };
 
-  const renderDashboard = () => {
-    switch (userRole) {
-      case 'Employee':
-        return <EmployeeDashboard userId={mockUser.id} />;
-      case 'Manager':
-        return <ManagerDashboard userId={mockUser.id} />;
-      case 'HR':
-        return <HRDashboard />;
-      default:
-        return <EmployeeDashboard userId={mockUser.id} />;
-    }
+  const handleBackToScanner = () => {
+    setSelectedChild(null);
+    setCurrentView('scanner');
+  };
+
+  const handleAdminLogin = () => {
+    setIsAdminLoggedIn(true);
+    setCurrentView('admin-dashboard');
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminLoggedIn(false);
+    setCurrentView('scanner');
+  };
+
+  const showAdminLogin = () => {
+    setCurrentView('admin-login');
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
-        currentUser={mockUser} 
-        onRoleChange={setUserRole}
-      />
-      <main className="container mx-auto px-6 py-8">
-        {renderDashboard()}
-      </main>
+    <div className="min-h-screen">
+      {currentView === 'scanner' && (
+        <div>
+          <QRScanner onChildFound={handleChildFound} />
+          <div className="fixed bottom-4 right-4">
+            <button
+              onClick={showAdminLogin}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              Admin Portal
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {currentView === 'profile' && selectedChild && (
+        <ChildProfile child={selectedChild} onBack={handleBackToScanner} />
+      )}
+      
+      {currentView === 'admin-login' && (
+        <AdminLogin onLogin={handleAdminLogin} />
+      )}
+      
+      {currentView === 'admin-dashboard' && (
+        <AdminDashboard onLogout={handleAdminLogout} />
+      )}
     </div>
   );
 };
